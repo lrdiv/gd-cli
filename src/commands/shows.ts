@@ -98,16 +98,9 @@ async function runShowWorkflow({
     return;
   }
 
-  const selectedGroup = await promptForDateSelection(groupedShows);
+  const selection = await browseShows(groupedShows);
 
-  if (!selectedGroup) {
-    console.log(chalk.gray("No selection made. Exiting."));
-    return;
-  }
-
-  const selection = await promptForShowSelection(selectedGroup);
-
-  if (selection.kind === "cancel") {
+  if (selection === null) {
     console.log(chalk.gray("No selection made. Exiting."));
     return;
   }
@@ -116,9 +109,32 @@ async function runShowWorkflow({
   return;
 }
 
-function parseDateArgument(
-  value: string,
-): { date: Date; includeYear: boolean } {
+async function browseShows(
+  groupedShows: {
+    date: string;
+    shows: ArchiveShow[];
+  }[],
+): Promise<{ kind: "show"; show: ArchiveShow } | null> {
+  const selectedGroup = await promptForDateSelection(groupedShows);
+
+  if (!selectedGroup) {
+    return null;
+  }
+
+  const selection = await promptForShowSelection(selectedGroup);
+
+  if (selection.kind === "cancel") {
+    console.log(chalk.gray("No selection made. Going back."));
+    return browseShows(groupedShows);
+  }
+
+  return selection;
+}
+
+function parseDateArgument(value: string): {
+  date: Date;
+  includeYear: boolean;
+} {
   const fullDateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (fullDateMatch) {
     const [, yearStr, monthStr, dayStr] = fullDateMatch;
