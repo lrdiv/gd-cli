@@ -1,8 +1,14 @@
-# gd-cli
+# gdarchive
 
 ## `(~);}`
 
 A TypeScript CLI for exploring Grateful Dead recordings on archive.org. It uses `commander` for argument parsing, `chalk` for colorful output, `ora` for spinners, `inquirer` for prompts, and `execa` for environment inspection.
+
+## Run with npx
+
+```bash
+npx gdarchive today
+```
 
 ## Quick start
 

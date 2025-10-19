@@ -1,7 +1,6 @@
 {
-  "name": "gd-cli",
+  "name": "gdarchive",
   "version": "0.1.0",
-  "private": true,
   "description": "A command line tool for browsing Grateful Dead shows on archive.org by date",
   "type": "module",
   "bin": {
