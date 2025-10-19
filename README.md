@@ -1,4 +1,4 @@
-# gdcli
+# gd-cli
 
 A TypeScript CLI for exploring Grateful Dead recordings on archive.org. It uses `commander` for argument parsing, `chalk` for colorful output, `ora` for spinners, `inquirer` for prompts, and `execa` for environment inspection.
 
@@ -7,7 +7,8 @@ A TypeScript CLI for exploring Grateful Dead recordings on archive.org. It uses 
 1. Install dependencies: `npm install`
 2. Run the CLI in watch mode: `npm run dev -- shows 1977-05-08`
 3. Build the distributable: `npm run build`
-4. Execute the bundled CLI: `node dist/cli.js shows 1977-05-08 --auto`
+4. Creare a global symlink: `npm link`
+5. Execute the bundled CLI: `gda shows 1977-05-08 --auto` // Opens the top rated recording of the infamous Cornell show
 
 ## Commands
 
@@ -15,9 +16,6 @@ A TypeScript CLI for exploring Grateful Dead recordings on archive.org. It uses 
   - `-a, --auto` — Automatically open the top-rated recording without prompting.
 - `today` — Looks up recordings that happened on today's month/day across all years.
   - `-a, --auto` — Automatically open the top-rated recording without prompting.
-- `info` — Prints Node, npm, and git versions using `execa`.
-
-The CLI also accepts a global `-v, --verbose` flag, reserved for future logging.
 
 ## Development scripts
 
