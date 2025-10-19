@@ -1,8 +1,8 @@
 {
-  "name": "gdcli",
+  "name": "gd-cli",
   "version": "0.1.0",
   "private": true,
-  "description": "A friendly TypeScript CLI scaffold using commander, chalk, ora, and execa.",
+  "description": "A command line tool for browsing Grateful Dead shows on archive.org by date",
   "type": "module",
   "bin": {
     "gda": "dist/cli.js"
