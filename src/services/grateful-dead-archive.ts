@@ -40,9 +40,13 @@ export class GratefulDeadArchiveClient {
    * The Archive API does not support direct month/day-only queries reliably, so the results are
    * filtered locally to ensure they match the requested calendar day across all years.
    */
-  async getShowsForDate(date: Date = new Date()): Promise<ArchiveShow[]> {
+  async getShowsForDate(
+    date: Date = new Date(),
+    options: { includeYear?: boolean } = {},
+  ): Promise<ArchiveShow[]> {
     const { month, day } = this.toMonthDay(date);
-    const searchUrl = this.buildSearchUrl(month, day);
+    const year = options.includeYear ? String(date.getUTCFullYear()) : undefined;
+    const searchUrl = this.buildSearchUrl(month, day, year);
     const response = await this.fetchImpl(searchUrl);
 
     if (!response.ok) {
@@ -65,45 +69,52 @@ export class GratefulDeadArchiveClient {
 
     const docs = payload.response.docs ?? [];
 
-    return docs
-      .filter((doc) => {
-        const docDate = doc.date ?? "";
-        // The archive stores dates as YYYY-MM-DD. We keep anything matching today's MM-DD.
-        return docDate.includes(`-${month}-${day}`);
-      })
-      .map((doc) => {
-        const identifier = doc.identifier;
-        const title = doc.title ?? identifier;
-        const showDate = this.normalizeArchiveDate(doc.date);
-        const venue = doc.venue;
-        const coverage = doc.coverage;
-        const source = doc.source;
-        const avgRating =
-          doc.avg_rating === undefined
-            ? undefined
-            : Number.parseFloat(String(doc.avg_rating)) || undefined;
-        const numRatings =
-          doc.num_reviews === undefined
-            ? undefined
-            : Number.parseInt(String(doc.num_reviews), 10);
+    const shows: ArchiveShow[] = [];
 
-        return {
+    for (const doc of docs) {
+      const identifier = doc.identifier;
+      const title = doc.title ?? identifier;
+      const showDate = this.normalizeArchiveDate(doc.date);
+
+      if (options.includeYear && year) {
+        if (showDate !== `${year}-${month}-${day}`) {
+          continue;
+        }
+      } else if (!showDate.endsWith(`-${month}-${day}`)) {
+        continue;
+      }
+
+      const venue = doc.venue;
+      const coverage = doc.coverage;
+      const source = doc.source;
+      const avgRating =
+        doc.avg_rating === undefined
+          ? undefined
+          : Number.parseFloat(String(doc.avg_rating)) || undefined;
+      const numRatings =
+        doc.num_reviews === undefined
+          ? undefined
+          : Number.parseInt(String(doc.num_reviews), 10);
+
+      shows.push({
+        identifier,
+        title,
+        date: showDate,
+        venue,
+        coverage,
+        source,
+        avgRating,
+        numRatings,
+        recordingType: this.detectRecordingType({
           identifier,
           title,
-          date: showDate,
-          venue,
-          coverage,
           source,
-          avgRating,
-          numRatings,
-          recordingType: this.detectRecordingType({
-            identifier,
-            title,
-            source,
-          }),
-          url: this.buildDetailsUrl(identifier),
-        };
+        }),
+        url: this.buildDetailsUrl(identifier),
       });
+    }
+
+    return shows;
   }
 
   /**
@@ -161,12 +172,17 @@ export class GratefulDeadArchiveClient {
     return { month, day };
   }
 
-  private buildSearchUrl(month: string, day: string): string {
-    const yearFilters: string[] = [];
-    for (let year = 1965; year <= 1995; year += 1) {
-      yearFilters.push(`date:${year}-${month}-${day}`);
+  private buildSearchUrl(month: string, day: string, year?: string): string {
+    let dateFilter: string;
+    if (year) {
+      dateFilter = `date:${year}-${month}-${day}`;
+    } else {
+      const yearFilters: string[] = [];
+      for (let candidateYear = 1965; candidateYear <= 1995; candidateYear += 1) {
+        yearFilters.push(`date:${candidateYear}-${month}-${day}`);
+      }
+      dateFilter = `(${yearFilters.join(" OR ")})`;
     }
-    const dateFilter = `(${yearFilters.join(" OR ")})`;
 
     const params = new URLSearchParams();
     params.set(

@@ -21,7 +21,7 @@ export function registerShows(program: Command) {
     .description(
       "Fetch Grateful Dead shows that happened on a specific date and open one in your browser",
     )
-    .argument("<date>", "Calendar date in YYYY-MM-DD format")
+    .argument("<date>", "Calendar date in YYYY-MM-DD or MM-DD format")
     .option(
       "-a, --auto",
       "Automatically open the first show without prompting",
@@ -29,10 +29,11 @@ export function registerShows(program: Command) {
     )
     .action(async (dateArg: string, options: ShowCommandOptions) => {
       try {
-        const targetDate = parseDateArgument(dateArg);
+        const { date: targetDate, includeYear } = parseDateArgument(dateArg);
         await runShowWorkflow({
           auto: options.auto ?? false,
-          fetchShows: (client) => client.getShowsForDate(targetDate),
+          fetchShows: (client) =>
+            client.getShowsForDate(targetDate, { includeYear }),
         });
       } catch (error) {
         console.error(chalk.red((error as Error).message));
@@ -115,30 +116,51 @@ async function runShowWorkflow({
   return;
 }
 
-function parseDateArgument(value: string): Date {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) {
+function parseDateArgument(
+  value: string,
+): { date: Date; includeYear: boolean } {
+  const fullDateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (fullDateMatch) {
+    const [, yearStr, monthStr, dayStr] = fullDateMatch;
+    const year = Number.parseInt(yearStr, 10);
+    const month = Number.parseInt(monthStr, 10);
+    const day = Number.parseInt(dayStr, 10);
+    const date = new Date(Date.UTC(year, month - 1, day));
+
+    if (
+      Number.isNaN(date.getTime()) ||
+      date.getUTCFullYear() !== year ||
+      date.getUTCMonth() + 1 !== month ||
+      date.getUTCDate() !== day
+    ) {
+      throw new Error(`Invalid date provided: "${value}"`);
+    }
+
+    return { date, includeYear: true };
+  }
+
+  const monthDayMatch = /^(\d{2})-(\d{2})$/.exec(value);
+  if (!monthDayMatch) {
     throw new Error(
-      `Invalid date format. Use YYYY-MM-DD (received "${value}")`,
+      `Invalid date format. Use YYYY-MM-DD or MM-DD (received "${value}")`,
     );
   }
 
-  const [, yearStr, monthStr, dayStr] = match;
-  const year = Number.parseInt(yearStr, 10);
+  const [, monthStr, dayStr] = monthDayMatch;
   const month = Number.parseInt(monthStr, 10);
   const day = Number.parseInt(dayStr, 10);
-  const date = new Date(Date.UTC(year, month - 1, day));
+  const placeholderYear = 2000; // Leap year to allow 02-29 lookup
+  const date = new Date(Date.UTC(placeholderYear, month - 1, day));
 
   if (
     Number.isNaN(date.getTime()) ||
-    date.getUTCFullYear() !== year ||
     date.getUTCMonth() + 1 !== month ||
     date.getUTCDate() !== day
   ) {
     throw new Error(`Invalid date provided: "${value}"`);
   }
 
-  return date;
+  return { date, includeYear: false };
 }
 
 async function openShow(
