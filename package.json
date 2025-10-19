@@ -1,0 +1,41 @@
+{
+  "name": "gdcli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A friendly TypeScript CLI scaffold using commander, chalk, ora, and execa.",
+  "type": "module",
+  "bin": {
+    "gda": "dist/cli.js"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "build": "tsup src/cli.ts --format esm --target node18 --dts --clean --sourcemap --minify",
+    "start": "node dist/cli.js --help",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "cli",
+    "typescript",
+    "commander",
+    "chalk",
+    "ora",
+    "execa"
+  ],
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "execa": "^9.2.0",
+    "inquirer": "^9.2.12",
+    "ora": "^8.1.0"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.9",
+    "@types/node": "^24.8.1",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.3"
+  }
+}
