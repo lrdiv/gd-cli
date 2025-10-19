@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn } from "node:child_process";
 
 export interface ArchiveShow {
   identifier: string;
@@ -9,7 +9,7 @@ export interface ArchiveShow {
   source?: string;
   avgRating?: number;
   numRatings?: number;
-  recordingType?: 'SBD' | 'AUD' | 'MTX';
+  recordingType?: "SBD" | "AUD" | "MTX";
   url: string;
 }
 
@@ -29,8 +29,8 @@ interface ArchiveResponse {
 }
 
 export class GratefulDeadArchiveClient {
-  private readonly baseUrl = 'https://archive.org/advancedsearch.php';
-  private readonly collection = 'GratefulDead';
+  private readonly baseUrl = "https://archive.org/advancedsearch.php";
+  private readonly collection = "GratefulDead";
   private readonly artist = '"Grateful Dead"';
 
   constructor(private readonly fetchImpl: typeof fetch = fetch) {}
@@ -46,24 +46,28 @@ export class GratefulDeadArchiveClient {
     const response = await this.fetchImpl(searchUrl);
 
     if (!response.ok) {
-      throw new Error(`Archive API request failed with status ${response.status}`);
+      throw new Error(
+        `Archive API request failed with status ${response.status}`,
+      );
     }
 
-    const payload = (await response.json()) as ArchiveResponse & { error?: string };
+    const payload = (await response.json()) as ArchiveResponse & {
+      error?: string;
+    };
 
     if (payload.error) {
       throw new Error(`Archive API error: ${payload.error}`);
     }
 
     if (!payload.response) {
-      throw new Error('Archive API response did not include any results');
+      throw new Error("Archive API response did not include any results");
     }
 
     const docs = payload.response.docs ?? [];
 
     return docs
       .filter((doc) => {
-        const docDate = doc.date ?? '';
+        const docDate = doc.date ?? "";
         // The archive stores dates as YYYY-MM-DD. We keep anything matching today's MM-DD.
         return docDate.includes(`-${month}-${day}`);
       })
@@ -95,9 +99,9 @@ export class GratefulDeadArchiveClient {
           recordingType: this.detectRecordingType({
             identifier,
             title,
-            source
+            source,
           }),
-          url: this.buildDetailsUrl(identifier)
+          url: this.buildDetailsUrl(identifier),
         };
       });
   }
@@ -112,33 +116,35 @@ export class GratefulDeadArchiveClient {
   /**
    * Opens the show in the user's default browser using platform-specific commands.
    */
-  async openShowInBrowser(show: Pick<ArchiveShow, 'url'> | string): Promise<void> {
-    const url = typeof show === 'string' ? show : show.url;
+  async openShowInBrowser(
+    show: Pick<ArchiveShow, "url"> | string,
+  ): Promise<void> {
+    const url = typeof show === "string" ? show : show.url;
 
     return new Promise((resolve, reject) => {
       let command: string;
       let args: string[];
-      const options = { stdio: 'ignore' as const, detached: true };
+      const options = { stdio: "ignore" as const, detached: true };
 
       switch (process.platform) {
-        case 'darwin':
-          command = 'open';
+        case "darwin":
+          command = "open";
           args = [url];
           break;
-        case 'win32':
-          command = 'cmd';
-          args = ['/c', 'start', '', url];
+        case "win32":
+          command = "cmd";
+          args = ["/c", "start", "", url];
           break;
         default:
-          command = 'xdg-open';
+          command = "xdg-open";
           args = [url];
       }
 
       const child = spawn(command, args, options);
 
-      child.on('error', (error) => reject(error));
-      child.on('close', (code) => {
-        if (code === 0 || command === 'cmd') {
+      child.on("error", (error) => reject(error));
+      child.on("close", (code) => {
+        if (code === 0 || command === "cmd") {
           resolve();
         } else {
           reject(new Error(`Failed to open browser (exit code ${code})`));
@@ -150,8 +156,8 @@ export class GratefulDeadArchiveClient {
   }
 
   private toMonthDay(date: Date): { month: string; day: string } {
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
     return { month, day };
   }
 
@@ -160,22 +166,26 @@ export class GratefulDeadArchiveClient {
     for (let year = 1965; year <= 1995; year += 1) {
       yearFilters.push(`date:${year}-${month}-${day}`);
     }
-    const dateFilter = `(${yearFilters.join(' OR ')})`;
+    const dateFilter = `(${yearFilters.join(" OR ")})`;
 
     const params = new URLSearchParams();
-    params.set('q', `collection:(${this.collection}) AND creator:${this.artist} AND ${dateFilter}`);
-    params.append('fl[]', 'identifier');
-    params.append('fl[]', 'title');
-    params.append('fl[]', 'date');
-    params.append('fl[]', 'venue');
-    params.append('fl[]', 'coverage');
-    params.append('fl[]', 'source');
-    params.append('fl[]', 'avg_rating');
-    params.append('fl[]', 'num_reviews');
-    params.append('sort[]', 'date asc');
-    params.set('rows', '500');
-    params.set('page', '1');
-    params.set('output', 'json');
+    params.set(
+      "q",
+      `collection:(${this.collection}) AND creator:${this.artist} AND ${dateFilter}`,
+    );
+    params.append("fl[]", "identifier");
+    params.append("fl[]", "title");
+    params.append("fl[]", "date");
+    params.append("fl[]", "venue");
+    params.append("fl[]", "coverage");
+    params.append("fl[]", "source");
+    params.append("fl[]", "avg_rating");
+    params.append("fl[]", "num_reviews");
+    params.append("fl[]", "files");
+    params.append("sort[]", "date asc");
+    params.set("rows", "500");
+    params.set("page", "1");
+    params.set("output", "json");
 
     return `${this.baseUrl}?${params.toString()}`;
   }
@@ -188,9 +198,11 @@ export class GratefulDeadArchiveClient {
     identifier: string;
     title?: string;
     source?: string;
-  }): 'SBD' | 'AUD' | 'MTX' | undefined {
+  }): "SBD" | "AUD" | "MTX" | undefined {
     const segments = [details.identifier, details.title, details.source]
-      .filter((segment): segment is string => Boolean(segment && segment.trim()))
+      .filter((segment): segment is string =>
+        Boolean(segment && segment.trim()),
+      )
       .map((segment) => segment.toLowerCase());
 
     if (segments.length === 0) {
@@ -199,31 +211,26 @@ export class GratefulDeadArchiveClient {
 
     if (
       segments.some(
-        (segment) =>
-          /\bmtx\b/.test(segment) || segment.includes('matrix')
+        (segment) => /\bmtx\b/.test(segment) || segment.includes("matrix"),
       )
     ) {
-      return 'MTX';
+      return "MTX";
     }
 
     if (
       segments.some(
-        (segment) =>
-          /\bsbd\b/.test(segment) ||
-          segment.includes('soundboard')
+        (segment) => /\bsbd\b/.test(segment) || segment.includes("soundboard"),
       )
     ) {
-      return 'SBD';
+      return "SBD";
     }
 
     if (
       segments.some(
-        (segment) =>
-          /\baud\b/.test(segment) ||
-          segment.includes('audience')
+        (segment) => /\baud\b/.test(segment) || segment.includes("audience"),
       )
     ) {
-      return 'AUD';
+      return "AUD";
     }
 
     return undefined;
@@ -231,7 +238,7 @@ export class GratefulDeadArchiveClient {
 
   private normalizeArchiveDate(rawDate: string | undefined): string {
     if (!rawDate) {
-      return 'Unknown date';
+      return "Unknown date";
     }
 
     const trimmed = rawDate.trim();

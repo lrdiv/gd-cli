@@ -12,22 +12,20 @@ interface ShowCommandOptions {
 
 interface ShowWorkflowConfig {
   auto: boolean;
-  fetchShows: (
-    client: GratefulDeadArchiveClient
-  ) => Promise<ArchiveShow[]>;
+  fetchShows: (client: GratefulDeadArchiveClient) => Promise<ArchiveShow[]>;
 }
 
 export function registerShows(program: Command) {
   program
     .command("shows")
     .description(
-      "Fetch Grateful Dead shows that happened on a specific date and open one in your browser"
+      "Fetch Grateful Dead shows that happened on a specific date and open one in your browser",
     )
     .argument("<date>", "Calendar date in YYYY-MM-DD format")
     .option(
       "-a, --auto",
       "Automatically open the first show without prompting",
-      false
+      false,
     )
     .action(async (dateArg: string, options: ShowCommandOptions) => {
       try {
@@ -47,12 +45,12 @@ export function registerToday(program: Command) {
   program
     .command("today")
     .description(
-      "Fetch Grateful Dead shows that happened on today's date and open one in your browser"
+      "Fetch Grateful Dead shows that happened on today's date and open one in your browser",
     )
     .option(
       "-a, --auto",
       "Automatically open the first show without prompting",
-      false
+      false,
     )
     .action(async (options: ShowCommandOptions) => {
       try {
@@ -121,7 +119,7 @@ function parseDateArgument(value: string): Date {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) {
     throw new Error(
-      `Invalid date format. Use YYYY-MM-DD (received "${value}")`
+      `Invalid date format. Use YYYY-MM-DD (received "${value}")`,
     );
   }
 
@@ -147,10 +145,10 @@ async function openShow(
   client: GratefulDeadArchiveClient,
   show: Awaited<
     ReturnType<GratefulDeadArchiveClient["getShowsForToday"]>
-  >[number]
+  >[number],
 ) {
   const spinner = ora(
-    `Opening ${show.title} (${show.date}) in your browser...`
+    `Opening ${show.title} (${show.date}) in your browser...`,
   ).start();
   try {
     await client.openShowInBrowser(show);
@@ -162,7 +160,7 @@ async function openShow(
 }
 
 function groupShowsByDate(
-  shows: ArchiveShow[]
+  shows: ArchiveShow[],
 ): Array<{ date: string; shows: ArchiveShow[] }> {
   const groups = new Map<string, ArchiveShow[]>();
 
@@ -199,7 +197,7 @@ function groupShowsByDate(
 }
 
 async function promptForDateSelection(
-  groups: Array<{ date: string; shows: ArchiveShow[] }>
+  groups: Array<{ date: string; shows: ArchiveShow[] }>,
 ): Promise<{ date: string; shows: ArchiveShow[] } | null> {
   const cancelToken = "__cancel__";
   const choices = [
@@ -232,10 +230,7 @@ async function promptForDateSelection(
 async function promptForShowSelection(group: {
   date: string;
   shows: ArchiveShow[];
-}): Promise<
-  | { kind: "show"; show: ArchiveShow }
-  | { kind: "cancel" }
-> {
+}): Promise<{ kind: "show"; show: ArchiveShow } | { kind: "cancel" }> {
   const cancelToken = "__cancel__";
   const choices = [
     ...group.shows.map((show) => ({
@@ -311,7 +306,7 @@ function formatShowLabel(show: ArchiveShow): string {
 
 function formatAverageRating(
   rating: number | undefined,
-  count: number | undefined
+  count: number | undefined,
 ): string | undefined {
   if (rating === undefined || Number.isNaN(rating)) {
     return undefined;
@@ -323,9 +318,7 @@ function formatAverageRating(
 
   const normalizedCount = Math.max(0, Math.trunc(count));
   const countLabel =
-    normalizedCount === 1
-      ? "1 rating"
-      : `${normalizedCount} ratings`;
+    normalizedCount === 1 ? "1 rating" : `${normalizedCount} ratings`;
 
   return `Avg rating ${rating.toFixed(1)} (${countLabel})`;
 }
@@ -335,8 +328,8 @@ function summarizeGroupVenues(shows: ArchiveShow[]): string | undefined {
     new Set(
       shows
         .map((show) => show.venue?.trim())
-        .filter((venue): venue is string => Boolean(venue))
-    )
+        .filter((venue): venue is string => Boolean(venue)),
+    ),
   );
 
   if (uniqueVenues.length === 0) {
@@ -355,8 +348,8 @@ function summarizeGroupLocations(shows: ArchiveShow[]): string | undefined {
     new Set(
       shows
         .map(getShowCityState)
-        .filter((location): location is string => Boolean(location))
-    )
+        .filter((location): location is string => Boolean(location)),
+    ),
   );
 
   if (uniqueLocations.length === 0) {
